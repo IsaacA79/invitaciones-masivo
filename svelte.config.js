@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-vercel';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 

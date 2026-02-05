@@ -317,29 +317,25 @@
                     ></div>
 
                     <li>
-                      <form method="POST" action="/auth/logout" class="ml-auto">
-                        <button
-                          type="submit"
-                          class={`btn btn-sm rounded-xl ${btn} whitespace-nowrap`}
-                          onclick={beforeLogout}
-                        >
-                          Cerrar sesión
-                        </button>
-                      </form>
+                      <a
+                        href="/auth/logout"
+                        class="bg-zinc-300 m-2 p-2 w-full justify-start rounded-xl text-white"
+                        onclick={beforeLogout}
+                      >
+                        Cerrar sesión
+                      </a>
                     </li>
                   </ul>
                 </details>
               </div>
             {:else}
-              <form method="POST" action="/auth/logout" class="w-full">
-                <button
-                  type="submit"
-                  class="bg-zinc-300 m-2 p-2 w-full justify-start rounded-xl text-white"
-                  onclick={beforeLogout}
-                >
-                  Cerrar sesión
-                </button>
-              </form>
+              <a
+                href="/auth/logout"
+                class="bg-zinc-300 m-2 p-2 w-full justify-start rounded-xl text-white"
+                onclick={beforeLogout}
+              >
+                Cerrar sesión
+              </a>
             {/if}
           </div>
         </div>
@@ -356,11 +352,10 @@
         </div>
       {:else}
         <div
-            class={`${shellW} mx-auto ${shellPad} ${
-              isBuilder ? "py-3" : "py-6"
-            } ${isLight ? "text-zinc-900" : "text-zinc-200"}`}
-          >
-
+          class={`${shellW} mx-auto ${shellPad} ${
+            isBuilder ? "py-3" : "py-6"
+          } ${isLight ? "text-zinc-900" : "text-zinc-200"}`}
+        >
           {#if showAdminNav}
             <div
               class="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-6 items-start"
