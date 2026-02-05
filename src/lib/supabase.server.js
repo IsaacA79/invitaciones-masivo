@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '$env/static/private'
+// src/lib/supabaseClient.js (recomendado)
+import { createClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
-const url = (SUPABASE_URL || '').trim()
-const key = ( SUPABASE_ANON_KEY || '').trim()
+const url = (PUBLIC_SUPABASE_URL || '').trim();
+const key = (PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
-if (process.env.NODE_ENV !== 'production') {
-  const mask = s => (s ? `${s.slice(0, 6)}…${s.slice(-6)}` : '')
-  console.log('[SUPABASE] URL =', url)
-  console.log('[SUPABASE] KEY =', mask(key), 'len=', key.length)
-}
+if (!url) throw new Error('Falta PUBLIC_SUPABASE_URL');
+if (!key) throw new Error('Falta PUBLIC_SUPABASE_ANON_KEY');
 
-const supabase = createClient(url, key)
-export default supabase
+export const supabase = createClient(url, key);
