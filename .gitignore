@@ -12,13 +12,13 @@ pnpm-debug.log*
 *.tgz
 
 # --- SvelteKit / Vite ---
-.svelte-kit/
-.vercel/
-.netlify/
-dist/
-build/
-.vite/
-.vite-cache/
+.svelte-kit
+.vercel
+.netlify
+dist
+build
+.vite
+.vite-cache
 
 # --- Coverage / test ---
 coverage/
