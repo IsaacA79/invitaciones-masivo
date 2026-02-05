@@ -1,6 +1,6 @@
 // src/lib/server/services/email/sendInviteEmail.js
 import { transporter } from './transporter.js';
-import { GMAIL_USER, GMAIL_FROM_NAME } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { renderInviteJpg } from './renderInviteImage.js';
 import crypto from 'node:crypto';
 
@@ -15,12 +15,14 @@ function escapeHtml(s = '') {
 
 // ✅ filename seguro (Windows/macOS/iOS)
 function safeFilenamePart(s = '') {
-  return String(s || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/[\/\\:*?"<>|]/g, '') // inválidos Windows
-    .replace(/[^\p{L}\p{N} ._-]/gu, '') // deja letras/números/espacios/punto/guion
-    .slice(0, 55) || 'SinNombre';
+  return (
+    String(s || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/[\/\\:*?"<>|]/g, '') // inválidos Windows
+      .replace(/[^\p{L}\p{N} ._-]/gu, '') // deja letras/números/espacios/punto/guion
+      .slice(0, 55) || 'SinNombre'
+  );
 }
 
 function guestLine({ role, department }) {
@@ -116,7 +118,18 @@ export async function sendInviteEmail({
   rsvpUrl,
   trackUrl
 }) {
-  const from = `${GMAIL_FROM_NAME} <${GMAIL_USER}>`;
+  // ✅ runtime env (no rompe build por exports faltantes)
+  const GMAIL_USER = (env.GMAIL_USER || '').trim();
+  const GMAIL_FROM_NAME = (env.GMAIL_FROM_NAME || '').trim();
+
+  if (!GMAIL_USER) {
+    throw new Error('Falta GMAIL_USER en variables de entorno (Netlify).');
+  }
+
+  // ✅ from robusto
+  const from = GMAIL_FROM_NAME
+    ? `"${GMAIL_FROM_NAME}" <${GMAIL_USER}>`
+    : GMAIL_USER;
 
   // ✅ CID único por correo (evita cache en envíos masivos)
   const cid = `invite-${crypto.randomUUID()}@inv`;
@@ -152,7 +165,10 @@ export async function sendInviteEmail({
     attachmentLabel: attachmentName
   });
 
-  const extra = [role, department].map((s) => String(s || '').trim()).filter(Boolean).join(' · ');
+  const extra = [role, department]
+    .map((s) => String(s || '').trim())
+    .filter(Boolean)
+    .join(' · ');
 
   const text =
     `${eventName || 'Evento'}\n\n` +

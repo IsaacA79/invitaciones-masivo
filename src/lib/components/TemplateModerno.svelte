@@ -249,7 +249,7 @@
   <g id="divider" transform={`translate(${$information.design.descX},${$information.design.descY})`}>
     <foreignObject x="0" y="865" width="1280" height="40">
       <div xmlns="http://www.w3.org/1999/xhtml" class="fo">
-        <div class="lineAccent" style={`background:${$information.design.accentColor || 'rgba(255,255,255,.22)'}`} />
+        <div  class="lineAccent" style={`background:${$information.design.accentColor || 'rgba(255,255,255,.22)'}`}></div>
       </div>
     </foreignObject>
   </g>
