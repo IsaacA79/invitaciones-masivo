@@ -1,0 +1,59 @@
+# --- Env / Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tgz
+
+# --- SvelteKit / Vite ---
+.svelte-kit/
+.vercel/
+.netlify/
+dist/
+build/
+.vite/
+.vite-cache/
+
+# --- Coverage / test ---
+coverage/
+.playwright/
+test-results/
+
+# --- Logs ---
+*.log
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Editor ---
+.vscode/
+.idea/
+
+# --- Python (si aplica) ---
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env/
+.pytest_cache/
+.mypy_cache/
+
+# --- Local DB / sqlite (si aplica) ---
+*.sqlite3
+*.db
+
+# --- Uploads / outputs locales (si tú generas resultados) ---
+uploads/
+results/
+output/
+*.xlsx
+*.csv
+*.zip

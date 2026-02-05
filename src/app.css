@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* opcional: fondo oscuro por defecto */
+html, body { height: 100%; }
+body { background: #111827; }
