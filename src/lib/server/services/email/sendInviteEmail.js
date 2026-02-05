@@ -1,6 +1,6 @@
 // src/lib/server/services/email/sendInviteEmail.js
 import { transporter } from './transporter.js';
-import { env } from '$env/dynamic/private';
+import { env as privateEnv } from '$env/dynamic/private';
 import { renderInviteJpg } from './renderInviteImage.js';
 import crypto from 'node:crypto';
 
@@ -119,8 +119,8 @@ export async function sendInviteEmail({
   trackUrl
 }) {
   // ✅ runtime env (no rompe build por exports faltantes)
-  const GMAIL_USER = (env.GMAIL_USER || '').trim();
-  const GMAIL_FROM_NAME = (env.GMAIL_FROM_NAME || '').trim();
+  const GMAIL_USER = (privateEnv.GMAIL_USER ?? '').trim();
+  const GMAIL_FROM_NAME = (privateEnv.GMAIL_FROM_NAME ?? 'Invitaciones DIF').trim();
 
   if (!GMAIL_USER) {
     throw new Error('Falta GMAIL_USER en variables de entorno (Netlify).');

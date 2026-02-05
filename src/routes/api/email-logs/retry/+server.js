@@ -1,20 +1,55 @@
 // src/routes/api/email-logs/retry/+server.js
 import { json } from '@sveltejs/kit';
-import { PUBLIC_BASE_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
 import { newToken, hashToken } from '$lib/server/crypto.js';
 import { logEmail } from '$lib/server/repositories/emailLogs.repo.js';
 import { sendInviteEmail } from '$lib/server/services/email/sendInviteEmail.js';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const MAX_SUBJECT = 200;
 const MAX_MESSAGE = 5000;
-const DEFAULT_LIMIT = 200;      // reintentos por request
+
+const DEFAULT_LIMIT = 200; // reintentos por request
 const MAX_LIMIT = 2000;
-const DEFAULT_SCAN_LIMIT = 5000; // cuantos logs recientes escaneamos para inferir "último estado"
+
+const DEFAULT_SCAN_LIMIT = 5000; // logs recientes a escanear para inferir "último estado"
 const MAX_SCAN_LIMIT = 20000;
+
 const SLEEP_MS = 300;
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Opción B (recomendada): NO depender de env var.
+ * - Si existe env.PUBLIC_BASE_URL, lo usa (útil si quieres forzar dominio).
+ * - Si no existe, arma baseUrl desde headers (x-forwarded-*) o host.
+ * - Fallback: url.origin.
+ */
+function getBaseUrl({ url, request }) {
+  // 0) opcional (no requerido): si lo configuras en Netlify, lo usamos
+  const configured = String(env.PUBLIC_BASE_URL ?? '').trim();
+  if (configured) return configured.replace(/\/$/, '');
+
+  // 1) Netlify / proxies (lo más confiable en producción)
+  const xfProto = request.headers.get('x-forwarded-proto');
+  const xfHost = request.headers.get('x-forwarded-host');
+
+  const host = (xfHost ?? request.headers.get('host') ?? '').trim();
+  if (host) {
+    const proto = String(
+      xfProto ?? url.protocol.replace(':', '') ?? 'https'
+    ).trim();
+    return `${proto}://${host}`.replace(/\/$/, '');
+  }
+
+  // 2) Fallback final
+  return String(url.origin).replace(/\/$/, '');
+}
 
 export async function POST({ locals, request, url }) {
   const startedAt = Date.now();
@@ -29,24 +64,40 @@ export async function POST({ locals, request, url }) {
     }
 
     const body = await request.json().catch(() => ({}));
+
     const eventId = String(body.eventId || '').trim();
-    const invitationIds = Array.isArray(body.invitationIds) ? body.invitationIds.map(String) : [];
+    const invitationIds = Array.isArray(body.invitationIds)
+      ? body.invitationIds.map((x) => String(x).trim())
+      : [];
 
     const subject = String(body.subject || '').trim();
     const message = String(body.message || '').trim();
 
-    const limit = Math.min(Math.max(Number(body.limit || DEFAULT_LIMIT), 1), MAX_LIMIT);
-    const scanLimit = Math.min(Math.max(Number(body.scanLimit || DEFAULT_SCAN_LIMIT), 100), MAX_SCAN_LIMIT);
+    const limit = Math.min(
+      Math.max(Number(body.limit || DEFAULT_LIMIT), 1),
+      MAX_LIMIT
+    );
+    const scanLimit = Math.min(
+      Math.max(Number(body.scanLimit || DEFAULT_SCAN_LIMIT), 100),
+      MAX_SCAN_LIMIT
+    );
 
-    if (!eventId || !UUID_RE.test(eventId)) return json({ error: 'eventId inválido' }, { status: 400 });
-    if (subject && (subject.length < 3 || subject.length > MAX_SUBJECT)) return json({ error: 'Asunto inválido' }, { status: 400 });
-    if (message && (message.length < 3 || message.length > MAX_MESSAGE)) return json({ error: 'Mensaje inválido' }, { status: 400 });
+    if (!eventId || !UUID_RE.test(eventId)) {
+      return json({ error: 'eventId inválido' }, { status: 400 });
+    }
+    if (subject && (subject.length < 3 || subject.length > MAX_SUBJECT)) {
+      return json({ error: 'Asunto inválido' }, { status: 400 });
+    }
+    if (message && (message.length < 3 || message.length > MAX_MESSAGE)) {
+      return json({ error: 'Mensaje inválido' }, { status: 400 });
+    }
 
     const admin = locals.supabaseAdmin;
-    const baseUrl = (PUBLIC_BASE_URL || url.origin).replace(/\/$/, '');
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    // 1) Validar acceso al evento
+    // ✅ baseUrl real (no depende de $env/static/public)
+    const baseUrl = getBaseUrl({ url, request });
+
+    // 1) Validar acceso al evento (con el cliente del usuario)
     const { data: event, error: evErr } = await locals.supabase
       .from('events')
       .select('id, title, event_json, approved')
@@ -55,26 +106,38 @@ export async function POST({ locals, request, url }) {
 
     if (evErr || !event) {
       console.error('[email-logs/retry] event access error', { eventId, evErr });
-      return json({ error: evErr?.message || 'Evento no encontrado o sin acceso' }, { status: 404 });
+      return json(
+        { error: evErr?.message || 'Evento no encontrado o sin acceso' },
+        { status: 404 }
+      );
     }
 
     if (!event.approved && role !== 'admin') {
-      return json({ error: 'Pendiente aprobación del admin para reintentar' }, { status: 403 });
+      return json(
+        { error: 'Pendiente aprobación del admin para reintentar' },
+        { status: 403 }
+      );
     }
 
-    const eventName = String(event?.event_json?.name || event.title || 'Evento').trim();
-    const finalSubject = subject || `Invitación: ${eventName}`.slice(0, MAX_SUBJECT);
-    const finalMessage = message || 'Te comparto nuevamente tu invitación.';
+    const eventName = String(event?.event_json?.name || event.title || 'Evento')
+      .trim()
+      .slice(0, 200);
+
+    const finalSubject =
+      (subject || `Invitación: ${eventName}`).slice(0, MAX_SUBJECT);
+
+    const finalMessage =
+      message || 'Te comparto nuevamente tu invitación.';
 
     // 2) Determinar invitaciones elegibles
     let eligibleInvitationIds = [];
 
     if (invitationIds.length) {
       // Modo explícito: reintentar SOLO estas invitaciones
-      const clean = invitationIds.filter((x) => UUID_RE.test(String(x).trim()));
+      const clean = invitationIds.filter((x) => UUID_RE.test(x));
       eligibleInvitationIds = Array.from(new Set(clean)).slice(0, limit);
     } else {
-      // Modo automático: tomar las invitaciones cuyo ÚLTIMO log sea failed
+      // Modo automático: tomar invitaciones cuyo ÚLTIMO log sea failed
       const { data: logs, error: logsErr } = await admin
         .from('email_logs')
         .select('invitation_id, status, created_at')
@@ -87,7 +150,7 @@ export async function POST({ locals, request, url }) {
         return json({ error: logsErr.message }, { status: 500 });
       }
 
-      // Como vienen ordenados desc, el primer estado que veamos por invitation_id es el "último"
+      // primer estado visto por invitation_id = "último"
       const lastByInvitation = new Map();
       for (const row of logs || []) {
         const invId = row.invitation_id;
@@ -95,7 +158,6 @@ export async function POST({ locals, request, url }) {
         if (!lastByInvitation.has(invId)) lastByInvitation.set(invId, row.status);
       }
 
-      eligibleInvitationIds = [];
       for (const [invId, st] of lastByInvitation.entries()) {
         if (st === 'failed') eligibleInvitationIds.push(invId);
         if (eligibleInvitationIds.length >= limit) break;
@@ -103,7 +165,14 @@ export async function POST({ locals, request, url }) {
     }
 
     if (!eligibleInvitationIds.length) {
-      return json({ ok: true, eligible: 0, sent: 0, failed: 0, results: [] });
+      return json({
+        ok: true,
+        baseUrl,
+        eligible: 0,
+        sent: 0,
+        failed: 0,
+        results: []
+      });
     }
 
     // 3) Traer invitaciones + datos del invitado
@@ -124,13 +193,14 @@ export async function POST({ locals, request, url }) {
     for (const inv of invitations || []) {
       const guest = inv.guests;
       const email = String(guest?.email || '').trim();
+
       if (!email) {
         failed++;
         results.push({ ok: false, invitationId: inv.id, error: 'Invitado sin email' });
         continue;
       }
 
-      // 4) Nuevo token (no puedes reutilizar el anterior porque solo guardas token_hash)
+      // 4) Nuevo token (solo guardas token_hash)
       const token = newToken();
       const token_hash = hashToken(token);
 
@@ -145,7 +215,7 @@ export async function POST({ locals, request, url }) {
         continue;
       }
 
-      // 5) Log queued
+      // 5) Log queued (best-effort)
       try {
         await logEmail({
           invitation_id: inv.id,
@@ -198,8 +268,13 @@ export async function POST({ locals, request, url }) {
         results.push({ ok: true, invitationId: inv.id, email });
         await sleep(SLEEP_MS);
       } catch (e) {
-        console.error('[email-logs/retry] send failed', { invitationId: inv.id, email, err: e?.message || e });
+        console.error('[email-logs/retry] send failed', {
+          invitationId: inv.id,
+          email,
+          err: e?.message || e
+        });
 
+        // log failed (best-effort)
         try {
           await logEmail({
             invitation_id: inv.id,
@@ -213,10 +288,14 @@ export async function POST({ locals, request, url }) {
           console.error('[email-logs/retry] log failed failed', { invitationId: inv.id, logErr });
         }
 
+        // marcar invitación como failed (best-effort)
         try {
           await admin.from('invitations').update({ status: 'failed' }).eq('id', inv.id);
         } catch (updErr) {
-          console.error('[email-logs/retry] invitation status failed update error', { invitationId: inv.id, updErr });
+          console.error('[email-logs/retry] invitation status failed update error', {
+            invitationId: inv.id,
+            updErr
+          });
         }
 
         failed++;
@@ -225,10 +304,18 @@ export async function POST({ locals, request, url }) {
     }
 
     const ms = Date.now() - startedAt;
-    console.log('[email-logs/retry] done', { eventId, eligible: eligibleInvitationIds.length, sent, failed, ms });
+    console.log('[email-logs/retry] done', {
+      eventId,
+      baseUrl,
+      eligible: eligibleInvitationIds.length,
+      sent,
+      failed,
+      ms
+    });
 
     return json({
       ok: true,
+      baseUrl,
       eligible: eligibleInvitationIds.length,
       sent,
       failed,

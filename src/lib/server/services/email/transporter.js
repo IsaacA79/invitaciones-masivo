@@ -1,12 +1,12 @@
 // src/lib/server/services/email/transporter.js
 import nodemailer from 'nodemailer';
-import { env } from '$env/dynamic/private';
+import { env as privateEnv } from '$env/dynamic/private';
 
-const GMAIL_USER = env.GMAIL_USER;
-const GMAIL_APP_PASSWORD = env.GMAIL_APP_PASSWORD;
+const GMAIL_USER = (privateEnv.GMAIL_USER ?? '').trim();
+const GMAIL_APP_PASSWORD = (privateEnv.GMAIL_APP_PASSWORD ?? '').trim();
 
-if (!GMAIL_USER) throw new Error('Falta GMAIL_USER');
-if (!GMAIL_APP_PASSWORD) throw new Error('Falta GMAIL_APP_PASSWORD');
+if (!GMAIL_USER) throw new Error('Falta GMAIL_USER en variables de entorno.');
+if (!GMAIL_APP_PASSWORD) throw new Error('Falta GMAIL_APP_PASSWORD en variables de entorno.');
 
 export const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
