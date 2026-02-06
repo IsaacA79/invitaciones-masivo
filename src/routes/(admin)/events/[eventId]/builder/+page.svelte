@@ -7,7 +7,7 @@
     information,
     guests,
     normalizeInformation,
-    setInformation
+    setInformation,
   } from "$lib/stores/event.js";
 
   import { currentEventId } from "$lib/stores/current.js";
@@ -67,8 +67,7 @@
 
   function isTempOrUnsafeUrl(v) {
     return (
-      typeof v === "string" &&
-      (v.startsWith("blob:") || v.startsWith("data:"))
+      typeof v === "string" && (v.startsWith("blob:") || v.startsWith("data:"))
     );
   }
 
@@ -152,12 +151,11 @@
     if (Array.isArray(data?.guests)) {
       const mapped = data.guests.map((g) => ({
         id:
-          g.id ||
-          (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
+          g.id || (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
         name: g.name || "",
         email: g.email || "",
         role: g.role || "",
-        department: g.department || ""
+        department: g.department || "",
       }));
       guests.set(mapped);
       serverGuestsSig = JSON.stringify(mapped);
@@ -195,7 +193,7 @@
 
       const bodyObj = {
         event_json: safeInfo,
-        title: String(safeInfo?.name || "").trim()
+        title: String(safeInfo?.name || "").trim(),
       };
 
       const res = await fetch(`/api/events/${eventId}`, {
@@ -203,7 +201,7 @@
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         signal: infoAbort.signal,
-        body: JSON.stringify(bodyObj)
+        body: JSON.stringify(bodyObj),
       });
 
       if (mySeq !== saveInfoSeq) return; // llegó uno más nuevo
@@ -211,10 +209,14 @@
       if (!res.ok) {
         const raw = await res.text().catch(() => "");
         const j = safeReadJsonText(raw);
-        const msg = j?.error || j?.message || raw || `No se pudo guardar (${res.status})`;
+        const msg =
+          j?.error || j?.message || raw || `No se pudo guardar (${res.status})`;
 
         // backoff si es timeout (57014)
-        if (raw.includes("57014") || msg.toLowerCase().includes("statement timeout")) {
+        if (
+          raw.includes("57014") ||
+          msg.toLowerCase().includes("statement timeout")
+        ) {
           infoBackoffUntil = Date.now() + 30_000;
         }
 
@@ -260,30 +262,40 @@
 
       const EMAIL_RE = /.+@.+\..+/;
 
-      const cleanList = (Array.isArray(list) ? list : []).map((g) => ({
-        ...g,
-        email: String(g?.email || '').trim().toLowerCase()
-      })).filter((g) => {
-        // decide tu regla: si quieres exigir email para persistir:
-        if (!g.email) return false;
-        return EMAIL_RE.test(g.email);
-      });
-
+      const cleanList = (Array.isArray(list) ? list : [])
+        .map((g) => ({
+          ...g,
+          email: String(g?.email || "")
+            .trim()
+            .toLowerCase(),
+        }))
+        .filter((g) => {
+          // decide tu regla: si quieres exigir email para persistir:
+          if (!g.email) return false;
+          return EMAIL_RE.test(g.email);
+        });
 
       const res = await fetch(`/api/events/${eventId}/guests`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         signal: guestsAbort.signal,
-        body: JSON.stringify({ guests: list })
+        body: JSON.stringify({ guests: list }),
       });
 
       if (!res.ok) {
         const raw = await res.text().catch(() => "");
         const j = safeReadJsonText(raw);
-        const msg = j?.error || j?.message || raw || `No se pudo guardar invitados (${res.status})`;
+        const msg =
+          j?.error ||
+          j?.message ||
+          raw ||
+          `No se pudo guardar invitados (${res.status})`;
 
-        if (raw.includes("57014") || msg.toLowerCase().includes("statement timeout")) {
+        if (
+          raw.includes("57014") ||
+          msg.toLowerCase().includes("statement timeout")
+        ) {
           guestsBackoffUntil = Date.now() + 30_000;
         }
 
@@ -354,8 +366,12 @@
   // ✅ cleanup al desmontar
   $effect(() => {
     return () => {
-      try { infoAbort?.abort?.(); } catch {}
-      try { guestsAbort?.abort?.(); } catch {}
+      try {
+        infoAbort?.abort?.();
+      } catch {}
+      try {
+        guestsAbort?.abort?.();
+      } catch {}
       clearTimeout(tInfo);
       clearTimeout(tGuests);
     };
@@ -367,7 +383,8 @@
   <div class="xl:hidden mb-3 flex items-center gap-2">
     <button
       type="button"
-      class={"btn btn-sm rounded-2xl flex-1 " + (mobileTab === "editor" ? "btn-neutral text-white" : "btn-ghost")}
+      class={"btn btn-sm rounded-2xl flex-1 " +
+        (mobileTab === "editor" ? "bg-green-300 text-zinc-900" : "btn-ghost")}
       onclick={() => (mobileTab = "editor")}
     >
       Editor
@@ -375,7 +392,8 @@
 
     <button
       type="button"
-      class={"btn btn-sm rounded-2xl flex-1 " + (mobileTab === "preview" ? "btn-neutral text-white" : "btn-ghost")}
+      class={"btn btn-sm rounded-2xl flex-1 " +
+        (mobileTab === "preview" ? "bg-green-300 text-zinc-900" : "btn-ghost")}
       onclick={() => (mobileTab = "preview")}
     >
       Vista previa
@@ -383,33 +401,52 @@
   </div>
 
   <div
-    class="flex-1 min-h-0 grid grid-cols-1 gap-6 items-start
-           xl:grid-cols-[minmax(0,1fr)_560px]
-           2xl:grid-cols-[minmax(0,1fr)_600px]"
+    class="flex-1 min-h-0 grid grid-cols-1 gap-6
+         xl:grid-cols-2
+         xl:items-stretch
+         xl:place-items-stretch"
   >
     <!-- Aside -->
     <aside
-      class={"min-w-0 min-h-0 xl:order-2 " + (mobileTab !== "editor" ? "hidden xl:block" : "")}
+      class={"min-w-0 min-h-0 xl:order-2 " +
+        (mobileTab !== "editor" ? "hidden xl:block" : "")}
     >
-      <div class="h-full min-h-0">
-        <BuilderAside />
+      <div
+        class="h-full min-h-0 rounded-3xl border border-base-300 bg-base-100/10 p-4 sm:p-6 overflow-hidden"
+      >
+        <!-- ✅ scroll interno (solo si hace falta) -->
+        <div class="h-full min-h-0 overflow-auto">
+          <BuilderAside />
+        </div>
       </div>
     </aside>
 
     <!-- Preview -->
     <section
-      class={"min-w-0 min-h-0 xl:order-1 " + (mobileTab !== "preview" ? "hidden xl:block" : "")}
+      class={"min-w-0 min-h-0 xl:order-1 " +
+        (mobileTab !== "preview" ? "hidden xl:block" : "")}
     >
-      <div class="h-full min-h-0 rounded-3xl border border-base-300 bg-base-100/10 p-4 sm:p-6">
-        <Preview />
+      <div
+        class="h-full min-h-0 rounded-3xl border border-base-300 bg-base-100/10 p-3 sm:p-6 overflow-hidden"
+      >
+        <!-- ✅ centra la invitación + scroll interno si se requiere -->
+        <div class="h-full min-h-0 grid place-items-center overflow-auto">
+          <div class="w-full max-w-[680px]">
+            <Preview />
+          </div>
+        </div>
       </div>
     </section>
   </div>
 
-  <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
+  <div
+    class=" mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400"
+  >
     <span>
       {#if saveInfoError || saveGuestsError}
-        <span class="text-red-400">Error guardando: {saveInfoError || saveGuestsError}</span>
+        <span class="text-red-400"
+          >Error guardando: {saveInfoError || saveGuestsError}</span
+        >
       {:else if autosaveState === "saving" || savingInfo || savingGuests}
         Guardando…
       {:else if autosaveState === "saved"}
