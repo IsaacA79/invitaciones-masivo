@@ -110,20 +110,20 @@
                          disabled:cursor-not-allowed disabled:opacity-50"
                   type="number"
                   min="1"
-                  max="20"
+                  max="5"
                   bind:value={guests_count}
                   disabled={!isYes}
                   inputmode="numeric"
                   placeholder="1"
                 />
                 <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-white/40">
-                  máx 20
+                  máx 5
                 </div>
               </div>
 
-              <p class="text-xs text-white/55">
-                Si seleccionas “No”, se enviará automáticamente <span class="text-white/80">0</span>.
-              </p>
+              <!-- <p class="text-xs text-white/55">
+                 <span class="text-white/80">0</span>.
+              </p> -->
             </fieldset>
 
             <fieldset class="grid gap-2">
@@ -180,8 +180,8 @@
       </div>
     </div>
 
-    <p class="mt-10 text-center text-xs text-white/35">
+    <!-- <p class="mt-10 text-center text-xs text-white/35">
       Tip: el diseño usa blur/glow sutil para verse bien en Windows e iOS sin saturar.
-    </p>
+    </p> -->
   </div>
 </div>

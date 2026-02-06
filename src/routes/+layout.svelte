@@ -62,7 +62,7 @@
       id: "graphite",
       label: "Grafito",
       bg: "from-zinc-950 via-zinc-900 to-slate-950",
-      accent: "bg-emerald-400 text-zinc-900",
+      accent: "bg-cyan-400 text-zinc-900",
     },
     {
       id: "sand",
@@ -251,7 +251,7 @@
         <div
           class={`${shellW} mx-auto ${shellPad} h-14 flex items-center gap-3 relative`}
         >
-          <div class="flex items-center gap-3 min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
             <div
               class={`h-9 w-9 rounded-2xl flex items-center justify-center shadow ${theme.accent}`}
             >
@@ -331,11 +331,12 @@
             {:else}
               <a
                 href="/auth/logout"
-                class="bg-zinc-300 m-2 p-2 w-full justify-start rounded-xl text-white"
+              class="btn btn-ghost gap-2 rounded-xl p-2 m-2 bg-linear-to-r from-cyan-400 to-cyan-800 text-white border-slate-300 hover:scale-105 hover:bg-cyan-50 hover:text-white transition-all duration-300"
                 onclick={beforeLogout}
               >
                 Cerrar sesión
               </a>
+        
             {/if}
           </div>
         </div>
