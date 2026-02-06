@@ -133,12 +133,11 @@
 
       <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
         <a class="btn btn-primary rounded-2xl depth" href="/events/new">Nuevo evento</a>
-
-        <form method="POST" action="/auth/logout">
+        <!-- <form method="POST" action="/auth/logout">
           <button type="submit" class="btn btn-ghost rounded-2xl depth" onclick={beforeLogout}>
             Salir
           </button>
-        </form>
+        </form> -->
       </div>
     </div>
 
