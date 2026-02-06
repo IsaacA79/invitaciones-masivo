@@ -259,9 +259,9 @@
               </table>
             </div>
 
-            <div class="mt-3 text-xs text-zinc-500 px-1">
+            <!-- <div class="mt-3 text-xs text-zinc-500 px-1">
               Tip: busca por título, ID y (admin) owner.
-            </div>
+            </div> -->
           </div>
         </div>
       </div>

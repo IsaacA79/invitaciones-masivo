@@ -107,7 +107,7 @@
       <div class="mt-2 flex items-start justify-between gap-3 min-w-0">
         <div class="min-w-0 flex-1 overflow-hidden">
           <div class="text-sm font-semibold truncate">{eventTitle}</div>
-          <div class="text-xs opacity-70 truncate">Configura tu invitación y envíala</div>
+          <!-- <div class="text-xs opacity-70 truncate">Configura tu invitación y envíala</div> -->
         </div>
 
 

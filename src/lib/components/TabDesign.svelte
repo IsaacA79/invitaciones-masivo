@@ -15,7 +15,7 @@
   // ─────────────────────────────────────────────────────────────
   const TEMPLATES = [
     { id: 'clasico', label: 'Clásica', hint: 'Diseño tradicional, limpio y corporativo.' },
-    { id: 'moderno', label: 'Moderna', hint: 'Glass + premium, tarjetas y “pills”.' }
+    { id: 'moderno', label: 'Moderna', hint: 'Diseño moderno.' }
   ];
 
   const templateKey = $derived.by(() =>

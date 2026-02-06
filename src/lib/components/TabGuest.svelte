@@ -162,7 +162,7 @@
   <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-base-300 pb-4 min-w-0">
     <div class="min-w-0">
       <h3 class="text-base font-semibold">Invitados</h3>
-      <p class="text-xs opacity-60 truncate">Agrega manualmente o importa desde CSV/XLSX</p>
+      <p class="text-xs opacity-60 truncate">Agrega  </p>
     </div>
 
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 min-w-0">

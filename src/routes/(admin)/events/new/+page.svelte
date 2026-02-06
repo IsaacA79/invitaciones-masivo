@@ -96,9 +96,9 @@
             />
           </div>
 
-          <p class="text-xs text-zinc-500">
+          <!-- <p class="text-xs text-zinc-500">
             Tip: usa una plantilla arriba para crear títulos más rápido.
-          </p>
+          </p> -->
 
           {#if form?.message}
             <div class="mt-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

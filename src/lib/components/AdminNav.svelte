@@ -130,11 +130,11 @@
         </div>
       </nav>
 
-      <div class="p-4 border-t border-white/10">
+      <!-- <div class="p-4 border-t border-white/10">
         <div class="text-xs opacity-70 leading-relaxed">
           Tip: usa roles mínimos y revisa auditoría para cambios sensibles.
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </aside>
