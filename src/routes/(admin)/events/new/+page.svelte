@@ -10,7 +10,7 @@
   const templates = [
     { label: 'Aparatos', value: 'Aparatos de ' },
     { label: 'Entrega', value: 'Entrega de ' },
-    { label: 'Clausura', value: 'Clausira de ' },
+    { label: 'Clausura', value: 'Clausura de ' },
     { label: 'Carrera', value: 'Carrera de ' },
     { label: 'Reunión', value: 'Reunión: ' },
     { label: 'Apertura', value: 'Apertura de ' }
