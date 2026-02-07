@@ -6,6 +6,8 @@ import { newToken, hashToken } from '$lib/server/crypto.js';
 import { rateLimit, secondsUntil } from '$lib/server/rateLimit.js';
 import { logEmail } from '$lib/server/repositories/emailLogs.repo.js';
 import { sendInviteEmail } from '$lib/server/services/email/sendInviteEmail.js';
+import { supabaseAdmin } from '$lib/server/supabaseAdmin.server.js';
+import sharp from 'sharp';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -41,18 +43,15 @@ export async function POST({ locals, request, url }) {
       return json({ error: 'Sin permisos para enviar invitaciones' }, { status: 403 });
     }
 
-    // ✅ Lee body con límite ANTES de parsear
-    const raw = await request.text().catch(() => '');
-    if (raw.length > MAX_BODY_BYTES) {
-      return json({ error: 'Payload too large' }, { status: 413 });
-    }
-
-    const body = safeJsonParse(raw);
-    if (!body) return json({ error: 'JSON inválido' }, { status: 400 });
+    const form = await request.formData();
+    const body = safeJsonParse(form.get('payload'));
 
     const eventId = String(body.eventId || '').trim();
     const subject = String(body.subject || '').trim();
     const message = String(body.message || '').trim();
+
+    const image = form.get('image');
+    const imageUrl = await generarImagen(body.eventId, image);
 
     if (!eventId || !UUID_RE.test(eventId)) return json({ error: 'eventId inválido' }, { status: 400 });
     if (subject.length < 3 || subject.length > MAX_SUBJECT) return json({ error: 'Asunto inválido' }, { status: 400 });
@@ -248,7 +247,8 @@ export async function POST({ locals, request, url }) {
           confirmUrl,
           declineUrl,
           rsvpUrl,
-          trackUrl
+          trackUrl,
+          imgsrc: imageUrl
         });
 
         await logEmail({
@@ -308,5 +308,33 @@ export async function POST({ locals, request, url }) {
   } catch (e) {
     console.error('[send-invites] fatal', e);
     return json({ error: e?.message || 'Error interno enviando invitaciones' }, { status: 500 });
+  }
+
+
+
+}
+
+async function generarImagen(eventId, file) {
+  try {
+    const bucket = 'imagenesEventos';
+    const ext = (file?.name?.split('.').pop() || 'jpeg').toLowerCase();
+    const path = `${eventId}.${ext}`;
+
+    if (!file || !(file instanceof File)) return null;
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const contentType = file.type || 'image/jpeg';
+
+    const { error } = await supabaseAdmin.storage
+      .from(bucket)
+      .upload(path, buffer, { contentType, upsert: true });
+
+    if (error) return null;
+
+    const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl ?? null;
+  } catch (e) {
+    console.error('[generarImagen] error', e);
+    return null;
   }
 }

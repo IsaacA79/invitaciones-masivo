@@ -183,7 +183,7 @@
       <div xmlns="http://www.w3.org/1999/xhtml" class="fo">
         <label for="logo_principal" class="cursor-alias">
           <img
-            src={$information.logo || 'https://ceascoahuila.gob.mx/wp-content/uploads/2024/02/Coahuila_Blanco-1024x295.png'}
+            src={$information.logo || '/img/Coahuila_Blanco-1024x295.png'}
             alt="Logo del evento"
             style="max-width:420px; max-height:150px; object-fit:contain;"
           />

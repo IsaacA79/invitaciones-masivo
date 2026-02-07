@@ -47,11 +47,13 @@ function inviteHtml({
   trackUrl,
   hasImage,
   cid,
-  attachmentLabel
+  attachmentLabel,
+  imgsrc
 }) {
   const name = escapeHtml(guestName || 'Hola');
   const ev = escapeHtml(eventName || 'Evento');
   const msg = escapeHtml(message || '').replaceAll('\n', '<br/>');
+  
 
   return `
   <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111">
@@ -60,19 +62,14 @@ function inviteHtml({
     <p style="margin:0 0 6px 0;">${name},</p>
     ${guestLine({ role, department })}
 
-    ${
-      hasImage
-        ? `
       <div style="margin:10px 0 16px 0;text-align:center;">
-        <img src="cid:${cid}" alt="Invitación"
+        <img src="${imgsrc}" alt="Invitación"
           style="width:100%;max-width:420px;height:auto;border-radius:12px;border:1px solid #eee;display:inline-block;" />
         <div style="margin-top:6px;font-size:12px;color:#777;">
           Si no puedes ver la imagen, abre el adjunto “${escapeHtml(attachmentLabel)}”.
         </div>
       </div>
-    `
-        : ''
-    }
+    
 
     <p style="margin:0 0 16px 0;">${msg}</p>
 
@@ -116,7 +113,8 @@ export async function sendInviteEmail({
   confirmUrl,
   declineUrl,
   rsvpUrl,
-  trackUrl
+  trackUrl,
+  imgsrc
 }) {
   // ✅ runtime env (no rompe build por exports faltantes)
   const GMAIL_USER = (privateEnv.GMAIL_USER ?? '').trim();
@@ -144,7 +142,7 @@ export async function sendInviteEmail({
   try {
     const scale = 0.55;
     const renderUrl = `${viewUrl}${viewUrl.includes('?') ? '&' : '?'}render=1&scale=${scale}`;
-    inviteImage = await renderInviteJpg({ renderUrl });
+    inviteImage = imgsrc;
   } catch {
     inviteImage = null;
   }
@@ -162,7 +160,8 @@ export async function sendInviteEmail({
     trackUrl,
     hasImage: Boolean(inviteImage),
     cid,
-    attachmentLabel: attachmentName
+    attachmentLabel: attachmentName,
+    imgsrc
   });
 
   const extra = [role, department]
@@ -179,28 +178,26 @@ export async function sendInviteEmail({
     `No asistir: ${declineUrl}\n` +
     `RSVP (acompañantes/comentario): ${rsvpUrl}\n`;
 
-  const attachments = inviteImage
-    ? [
-        // 1) INLINE (para mostrarse dentro)
-        {
-          filename: `inline-${attachmentName}`,
-          content: inviteImage,
-          cid,
-          contentType: 'image/jpeg',
-          contentDisposition: 'inline',
-          encoding: 'base64',
-          headers: { 'Content-ID': `<${cid}>` }
-        },
-        // 2) ADJUNTO NORMAL (con invitado + evento)
-        {
-          filename: attachmentName,
-          content: inviteImage,
-          contentType: 'image/jpeg',
-          contentDisposition: 'attachment',
-          encoding: 'base64'
-        }
-      ]
-    : [];
+  let attachments = [];
+
+if (inviteImage) {
+  const r = await fetch(inviteImage);
+  if (!r.ok) throw new Error('No pude descargar la imagen');
+
+  const buf = Buffer.from(await r.arrayBuffer());
+  const base64 = buf.toString('base64');
+
+  const cid = 'invite-image';
+
+  attachments = [{
+    filename: `inline-${attachmentName}`,
+    content: base64,
+    contentType: 'image/jpeg',
+    contentDisposition: 'inline',
+    encoding: 'base64',
+    cid
+  }];
+}
 
   const info = await transporter.sendMail({
     from,

@@ -222,7 +222,7 @@
   </g>
 
   <!-- ✅ Description minimal + clamp 3 -->
-  <g id="description" transform={`translate(${$information.design.descX},${$information.design.descY})`}>
+  <g id="description">
     <foreignObject x="0" y="1100" width="1280" height="320">
       <div xmlns="http://www.w3.org/1999/xhtml" class="fo-wrap">
         <p
@@ -236,7 +236,7 @@
                   color:${$information.design.textColor};
                   opacity:${$information.design.textOpacity};
                   text-shadow:${$information.design.shadowEnabled ? `${$information.design.shadowOffsetX}px ${$information.design.shadowOffsetY}px ${$information.design.shadowBlur}px ${$information.design.shadowColor}` : 'none'};
-                  white-space: pre-wrap;`}
+                  `}
         >
           <label for="description_event" class="cursor-alias">
             {$information.description || "Descripción del evento"}
@@ -250,7 +250,7 @@
     <foreignObject x="420" y="930" width="200" height="200" transform="matrix(1.25,0,0,1.35,0,0)">
       <div xmlns="http://www.w3.org/1999/xhtml" class="flex justify-center items-center h-full w-full scale-75">
         <label for="logo_principal" class="cursor-alias">
-          <img src={$information.logo || 'https://ceascoahuila.gob.mx/wp-content/uploads/2024/02/Coahuila_Blanco-1024x295.png'} alt="Logo del evento" />
+          <img src={$information.logo || '/img/Coahuila_Blanco-1024x295.png'} alt="Logo del evento" />
         </label>
       </div>
     </foreignObject>
