@@ -140,7 +140,9 @@
     try {
       const html = getInvitationHTML();
 
-      const { blob, file } = await generateImage();
+      const d = $information?.design ?? {};
+
+      const { blob, file } = await generateImage(d.template === "moderno" ? "invitacion_moderno" : "invitacion");
 
       const payload = {
         eventId,
